@@ -4,24 +4,34 @@ import numpy as np
 st.set_page_config(layout="wide")
 
 # -------------------------
-# CSS (อ่านง่าย)
+# UI (อ่านง่ายจริง)
 # -------------------------
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
     background: #eef3f8;
 }
-* { color: #000000 !important; }
 
+/* ตัวหนังสือ */
+* {
+    color: #000000 !important;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* input */
 input {
     background: white !important;
     color: black !important;
+    border: 1px solid #ccc !important;
 }
+
+/* dropdown */
 div[data-baseweb="select"] > div {
     background: white !important;
     color: black !important;
 }
 
+/* card */
 .card {
     background: white;
     padding: 20px;
@@ -31,7 +41,7 @@ div[data-baseweb="select"] > div {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🏗️ Pile Load + Eccentricity Tool")
+st.title("🏗️ Pile Group Analysis Tool")
 
 col1, col2 = st.columns(2)
 
@@ -41,12 +51,12 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    layout = st.selectbox("Layout", ["2x2", "3x3", "2x3"])
+    layout = st.selectbox("Pile Layout", ["2x2", "3x3", "2x3"])
 
     sx = st.number_input("Spacing X (m)", value=2.0)
     sy = st.number_input("Spacing Y (m)", value=2.0)
 
-    P = st.number_input("Load P (kN)", value=1000.0)
+    P = st.number_input("Total Load P (kN)", value=1000.0)
     ex = st.number_input("Eccentricity ex (m)", value=0.2)
     ey = st.number_input("Eccentricity ey (m)", value=0.0)
 
@@ -55,7 +65,7 @@ with col1:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------
-# LAYOUT GENERATOR
+# GENERATE LAYOUT
 # -------------------------
 def generate(layout, sx, sy):
     if layout == "2x2":
@@ -112,17 +122,19 @@ with col2:
         st.write(f"x̄ = {x_bar:.2f} m")
         st.write(f"ȳ = {y_bar:.2f} m")
 
-        st.subheader("📊 Result per Pile")
+        st.subheader("📊 Pile Results")
 
         for i in range(n):
             st.write(
-                f"Pile {i+1}:  Pi = {Pi[i]:.2f} kN | "
-                f"ex = {ex_i[i]:.2f} m | ey = {ey_i[i]:.2f} m"
+                f"Pile {i+1} → "
+                f"Pi = {Pi[i]:.2f} kN | "
+                f"ex = {ex_i[i]:.2f} m | "
+                f"ey = {ey_i[i]:.2f} m"
             )
 
         if np.min(Pi) < 0:
             st.error("❌ มีแรงดึง (uplift)")
         else:
-            st.success("✅ Safe")
+            st.success("✅ ทุกเสารับแรงอัด")
 
         st.markdown('</div>', unsafe_allow_html=True)
