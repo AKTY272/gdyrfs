@@ -4,32 +4,24 @@ import numpy as np
 st.set_page_config(layout="wide")
 
 # -------------------------
-# CSS (แก้ readability)
+# CSS (อ่านง่าย)
 # -------------------------
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] {
     background: #eef3f8;
 }
+* { color: #000000 !important; }
 
-/* ตัวหนังสือ */
-* {
-    color: #000000 !important;
-}
-
-/* input */
 input {
-    background-color: white !important;
+    background: white !important;
     color: black !important;
 }
-
-/* dropdown */
 div[data-baseweb="select"] > div {
-    background-color: white !important;
+    background: white !important;
     color: black !important;
 }
 
-/* card */
 .card {
     background: white;
     padding: 20px;
@@ -39,12 +31,12 @@ div[data-baseweb="select"] > div {
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🏗️ Pile Group Designer (Smart Input)")
+st.title("🏗️ Pile Load + Eccentricity Tool")
 
 col1, col2 = st.columns(2)
 
 # -------------------------
-# INPUT (ง่ายขึ้น)
+# INPUT
 # -------------------------
 with col1:
     st.markdown('<div class="card">', unsafe_allow_html=True)
@@ -63,9 +55,9 @@ with col1:
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------
-# GENERATE PILES
+# LAYOUT GENERATOR
 # -------------------------
-def generate_layout(layout, sx, sy):
+def generate(layout, sx, sy):
     if layout == "2x2":
         x = [-sx/2, sx/2, -sx/2, sx/2]
         y = [-sy/2, -sy/2, sy/2, sy/2]
@@ -87,45 +79,50 @@ def generate_layout(layout, sx, sy):
     return np.array(x), np.array(y)
 
 # -------------------------
-# OUTPUT
+# CALCULATION
 # -------------------------
 with col2:
     if run:
 
-        x, y = generate_layout(layout, sx, sy)
+        x, y = generate(layout, sx, sy)
         n = len(x)
 
         # centroid
         x_bar = np.mean(x)
         y_bar = np.mean(y)
 
+        # eccentricity ของแต่ละเสา
+        ex_i = x - x_bar
+        ey_i = y - y_bar
+
         # moment
         Mx = P * ey
         My = P * ex
 
-        Ix = np.sum((y - y_bar)**2)
-        Iy = np.sum((x - x_bar)**2)
+        # inertia
+        Ix = np.sum(ey_i**2)
+        Iy = np.sum(ex_i**2)
 
-        Qi = (P / n) + (Mx * (y - y_bar)/Ix) + (My * (x - x_bar)/Iy)
-
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("📊 Result")
-
-        st.write(f"Centroid: ({x_bar:.2f}, {y_bar:.2f})")
-        st.write(f"Max Load: {np.max(Qi):.2f} kN")
-        st.write(f"Min Load: {np.min(Qi):.2f} kN")
-
-        st.markdown('</div>', unsafe_allow_html=True)
+        # load per pile
+        Pi = (P / n) + (Mx * ey_i / Ix) + (My * ex_i / Iy)
 
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("📋 Load per Pile")
+
+        st.subheader("📍 Centroid")
+        st.write(f"x̄ = {x_bar:.2f} m")
+        st.write(f"ȳ = {y_bar:.2f} m")
+
+        st.subheader("📊 Result per Pile")
 
         for i in range(n):
-            st.write(f"Pile {i+1}: {Qi[i]:.2f} kN")
+            st.write(
+                f"Pile {i+1}:  Pi = {Pi[i]:.2f} kN | "
+                f"ex = {ex_i[i]:.2f} m | ey = {ey_i[i]:.2f} m"
+            )
 
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        if np.min(Qi) < 0:
-            st.error("❌ Uplift เกิดขึ้น")
+        if np.min(Pi) < 0:
+            st.error("❌ มีแรงดึง (uplift)")
         else:
             st.success("✅ Safe")
+
+        st.markdown('</div>', unsafe_allow_html=True)
