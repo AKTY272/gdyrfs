@@ -5,150 +5,162 @@ import numpy as np
 # Page Config
 # -------------------------
 st.set_page_config(
-    page_title="Foundation Calculator",
+    page_title="Shallow Foundation Tool",
     page_icon="🏗️",
     layout="centered"
 )
 
 # -------------------------
-# UI Style
+# CSS (UI ให้ดูโปร)
 # -------------------------
 st.markdown("""
 <style>
-.block-container {
-    padding-top: 2rem;
-}
+.block-container {padding-top: 2rem;}
 .card {
-    background-color: white;
+    background: white;
     padding: 20px;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border-radius: 16px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
     margin-bottom: 20px;
 }
+.title {font-size: 28px; font-weight: 700;}
+.subtitle {color: gray;}
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------
 # Header
 # -------------------------
-st.title("🏗️ Shallow Foundation Calculator")
-st.caption("Terzaghi Bearing Capacity Method")
+st.markdown('<div class="title">🏗️ Shallow Foundation Calculator</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Terzaghi Bearing Capacity</div>', unsafe_allow_html=True)
 
 # -------------------------
 # Input
 # -------------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
-st.subheader("📥 Input Parameters")
+st.subheader("📥 Input")
 
-col1, col2 = st.columns(2)
+c1, c2 = st.columns(2)
 
-with col1:
-    B = st.slider("Width B (m)", 0.1, 10.0, 2.0)
-    L = st.slider("Length L (m)", 0.1, 10.0, 2.0)
-    D = st.slider("Depth D (m)", 0.1, 10.0, 1.0)
+with c1:
+    B = st.slider("Width B (m)", 0.5, 10.0, 2.0)
+    D = st.slider("Depth D (m)", 0.5, 10.0, 1.0)
 
-with col2:
+with c2:
     c = st.slider("Cohesion c (kPa)", 0.0, 100.0, 10.0)
-    phi = st.slider("Friction angle φ (deg)", 0.0, 45.0, 30.0)
-    gamma = st.slider("Unit weight γ (kN/m³)", 10.0, 25.0, 18.0)
-    FS = st.slider("Factor of Safety", 1.0, 5.0, 3.0)
+    phi = st.slider("φ (deg)", 0.0, 45.0, 30.0)
+    gamma = st.slider("γ (kN/m³)", 10.0, 25.0, 18.0)
+    FS = st.slider("FS", 1.0, 5.0, 3.0)
 
-calculate = st.button("🚀 Calculate")
+run = st.button("🚀 Calculate")
 st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------
 # Calculation
 # -------------------------
-if calculate:
+if run:
+    phi_r = np.radians(phi)
 
-    phi_rad = np.radians(phi)
+    Nq = np.exp(np.pi * np.tan(phi_r)) * (np.tan(np.radians(45)+phi_r/2))**2
+    Nc = 5.7 if phi == 0 else (Nq-1)/np.tan(phi_r)
+    Ng = 2*(Nq+1)*np.tan(phi_r)
 
-    Nq = np.exp(np.pi * np.tan(phi_rad)) * (np.tan(np.radians(45) + phi_rad/2))**2
-    
-    if phi == 0:
-        Nc = 5.7
-    else:
-        Nc = (Nq - 1) / np.tan(phi_rad)
-
-    Ngamma = 2 * (Nq + 1) * np.tan(phi_rad)
-
-    qult = c * Nc + gamma * D * Nq + 0.5 * gamma * B * Ngamma
+    qult = c*Nc + gamma*D*Nq + 0.5*gamma*B*Ng
     qall = qult / FS
 
     # -------------------------
-    # Results
+    # Result
     # -------------------------
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("📊 Results")
+    st.subheader("📊 Result")
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("q_ult (kPa)", f"{qult:,.2f}")
-    col2.metric("q_all (kPa)", f"{qall:,.2f}")
-    col3.metric("q_safe (kPa)", f"{qall:,.2f}")
+    r1, r2, r3 = st.columns(3)
+    r1.metric("q_ult", f"{qult:,.2f} kPa")
+    r2.metric("q_all", f"{qall:,.2f} kPa")
+    r3.metric("q_safe", f"{qall:,.2f} kPa")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -------------------------
-    # Graph (no matplotlib)
+    # Graph (no lib)
     # -------------------------
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("📈 Sensitivity Analysis")
+    st.subheader("📈 Behavior")
 
-    graph_type = st.selectbox(
-        "เลือกกราฟ",
-        ["q vs Width (B)", "q vs Friction angle (φ)"]
-    )
+    mode = st.selectbox("เลือกกราฟ", ["q vs B", "q vs φ"])
 
-    if graph_type == "q vs Width (B)":
-        B_range = np.linspace(0.5, 10, 50)
-        q_vals = []
+    if mode == "q vs B":
+        Bv = np.linspace(0.5, 10, 50)
+        qv = []
 
-        for b in B_range:
-            Nq = np.exp(np.pi * np.tan(phi_rad)) * (np.tan(np.radians(45) + phi_rad/2))**2
-            Nc = 5.7 if phi == 0 else (Nq - 1) / np.tan(phi_rad)
-            Ngamma = 2 * (Nq + 1) * np.tan(phi_rad)
+        for b in Bv:
+            qu = c*Nc + gamma*D*Nq + 0.5*gamma*b*Ng
+            qv.append(qu/FS)
 
-            qult_temp = c * Nc + gamma * D * Nq + 0.5 * gamma * b * Ngamma
-            q_vals.append(qult_temp / FS)
-
-        st.line_chart(q_vals)
+        st.line_chart(qv)
 
     else:
-        phi_range = np.linspace(0, 45, 50)
-        q_vals = []
+        pv = np.linspace(0, 45, 50)
+        qv = []
 
-        for p in phi_range:
-            phi_r = np.radians(p)
-            Nq = np.exp(np.pi * np.tan(phi_r)) * (np.tan(np.radians(45) + phi_r/2))**2
-            
-            Nc = 5.7 if p == 0 else (Nq - 1) / np.tan(phi_r)
-            Ngamma = 2 * (Nq + 1) * np.tan(phi_r)
+        for p in pv:
+            pr = np.radians(p)
+            Nq2 = np.exp(np.pi*np.tan(pr))*(np.tan(np.radians(45)+pr/2))**2
+            Nc2 = 5.7 if p == 0 else (Nq2-1)/np.tan(pr)
+            Ng2 = 2*(Nq2+1)*np.tan(pr)
 
-            qult_temp = c * Nc + gamma * D * Nq + 0.5 * gamma * B * Ngamma
-            q_vals.append(qult_temp / FS)
+            qu = c*Nc2 + gamma*D*Nq2 + 0.5*gamma*B*Ng2
+            qv.append(qu/FS)
 
-        st.line_chart(q_vals)
+        st.line_chart(qv)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -------------------------
-    # Simple Diagram (no matplotlib)
+    # Professional Diagram (SVG)
     # -------------------------
     st.markdown('<div class="card">', unsafe_allow_html=True)
-    st.subheader("🏗️ Footing Diagram")
+    st.subheader("🏗️ Foundation Diagram")
 
-    st.markdown(f"""
-    ```
-        Ground Level
-    -----------------------
-            |<-- B = {B} m -->|
-            ┌───────────────┐
-            │   FOOTING     │
-            └───────────────┘
-                ↑
-                │  D = {D} m
-                ↓
-    ```
-    """)
+    scale = 50
+    w = B*scale
+    d = D*scale
+
+    svg = f"""
+    <svg width="420" height="300">
+
+    <!-- Ground -->
+    <line x1="50" y1="120" x2="370" y2="120" stroke="black" stroke-width="2"/>
+
+    <!-- Footing -->
+    <rect x="{210-w/2}" y="120" width="{w}" height="35"
+          fill="#4da6ff" stroke="black"/>
+
+    <!-- Load -->
+    <line x1="210" y1="60" x2="210" y2="120"
+          stroke="red" stroke-width="2"/>
+    <text x="215" y="80" fill="red">P</text>
+
+    <!-- Width -->
+    <line x1="{210-w/2}" y1="180" x2="{210+w/2}" y2="180"
+          stroke="black" marker-start="url(#a)" marker-end="url(#a)"/>
+    <text x="210" y="200" text-anchor="middle">B = {B:.2f} m</text>
+
+    <!-- Depth -->
+    <line x1="60" y1="120" x2="60" y2="{120+d}"
+          stroke="black" marker-start="url(#a)" marker-end="url(#a)"/>
+    <text x="65" y="{120+d/2}">D = {D:.2f} m</text>
+
+    <defs>
+    <marker id="a" markerWidth="10" markerHeight="10"
+        refX="5" refY="5" orient="auto">
+        <path d="M0,0 L10,5 L0,10 z" fill="black"/>
+    </marker>
+    </defs>
+
+    </svg>
+    """
+
+    st.markdown(svg, unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
