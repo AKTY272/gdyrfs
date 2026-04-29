@@ -5,101 +5,53 @@ import numpy as np
 # Page Config
 # -------------------------
 st.set_page_config(
-    page_title="Pile Foundation Designer",
+    page_title="Pile Group Centroid Tool",
     page_icon="🏗️",
     layout="wide"
 )
 
 # -------------------------
-# CSS (แก้ readability เต็มระบบ)
+# CSS
 # -------------------------
 st.markdown("""
 <style>
-
-/* พื้นหลัง */
 [data-testid="stAppViewContainer"] {
     background: #eef3f8;
 }
-
-/* ฟอนต์ + สี */
 [data-testid="stAppViewContainer"] * {
     color: #1a1a1a !important;
     font-family: 'Segoe UI', sans-serif;
 }
-
-/* การ์ด */
 .card {
-    background: #ffffff;
+    background: white;
     padding: 25px;
     border-radius: 15px;
     box-shadow: 0 6px 18px rgba(0,0,0,0.08);
     margin-bottom: 20px;
 }
-
-/* INPUT (จุดสำคัญ) */
-input {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    border: 1px solid #ccc !important;
-    border-radius: 8px;
-}
-
-/* dropdown */
-div[data-baseweb="select"] > div {
-    background-color: #ffffff !important;
-    color: #000000 !important;
-}
-
-/* label */
-label {
-    font-weight: 600 !important;
-}
-
-/* ปุ่ม */
 .stButton>button {
     background: #1565c0;
     color: white !important;
     border-radius: 10px;
     height: 3em;
     width: 100%;
-    font-weight: 600;
 }
-
-/* result box */
-.result-box {
+.result {
     background: #f1f6ff;
     padding: 20px;
     border-radius: 12px;
     border-left: 6px solid #1565c0;
 }
-
-/* table */
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-th {
-    background: #1565c0;
-    color: white;
-}
-td, th {
-    padding: 10px;
-    text-align: center;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------
 # Title
 # -------------------------
-st.title("🏗️ Pile Foundation Designer")
-st.caption("Eccentric Load Distribution")
+st.title("🏗️ Pile Group Centroid Calculator")
+st.caption("Centroid + Eccentric Load Effect")
 
-# -------------------------
-# Layout
-# -------------------------
-col1, col2 = st.columns([1,1])
+col1, col2 = st.columns(2)
 
 # -------------------------
 # INPUT
@@ -108,68 +60,103 @@ with col1:
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("📥 Input")
 
-    P = st.number_input("Axial Load P (kN)", value=1000.0)
-    e = st.number_input("Eccentricity e (m)", value=0.5)
-    n = st.selectbox("Number of Piles", [2, 4, 6])
-    spacing = st.number_input("Pile spacing (m)", value=2.0)
+    n = st.number_input("Number of piles", min_value=1, value=4)
+
+    st.write("📍 ใส่ตำแหน่งเสาเข็ม (x, y)")
+
+    x = []
+    y = []
+
+    for i in range(int(n)):
+        c1, c2 = st.columns(2)
+        xi = c1.number_input(f"x{i+1} (m)", value=0.0, key=f"x{i}")
+        yi = c2.number_input(f"y{i+1} (m)", value=0.0, key=f"y{i}")
+        x.append(xi)
+        y.append(yi)
+
+    P = st.number_input("Load P (kN)", value=1000.0)
+    ex = st.number_input("Eccentricity ex (m)", value=0.0)
+    ey = st.number_input("Eccentricity ey (m)", value=0.0)
 
     run = st.button("🚀 Calculate")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 # -------------------------
-# OUTPUT
+# CALCULATION
 # -------------------------
 with col2:
-
     if run:
 
-        M = P * e
+        x = np.array(x)
+        y = np.array(y)
 
-        if n == 2:
-            x = np.array([-spacing/2, spacing/2])
-        elif n == 4:
-            x = np.array([-spacing/2, spacing/2, -spacing/2, spacing/2])
-        else:
-            x = np.array([-spacing, 0, spacing, -spacing, 0, spacing])
+        # -------------------------
+        # Original Centroid
+        # -------------------------
+        x_bar = np.mean(x)
+        y_bar = np.mean(y)
 
-        sum_x2 = np.sum(x**2)
-        Qi = (P / n) + (M * x / sum_x2)
+        # -------------------------
+        # Moment
+        # -------------------------
+        Mx = P * ey   # moment about x
+        My = P * ex   # moment about y
 
-        # Summary
+        # -------------------------
+        # Distribution
+        # -------------------------
+        Ix = np.sum((y - y_bar)**2)
+        Iy = np.sum((x - x_bar)**2)
+
+        Qi = (P / n) + (Mx * (y - y_bar) / Ix) + (My * (x - x_bar) / Iy)
+
+        # -------------------------
+        # New centroid (weighted)
+        # -------------------------
+        x_new = np.sum(Qi * x) / np.sum(Qi)
+        y_new = np.sum(Qi * y) / np.sum(Qi)
+
+        # -------------------------
+        # OUTPUT
+        # -------------------------
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("📊 Summary")
+        st.subheader("📊 Centroid")
 
         st.markdown(f"""
-        <div class="result-box">
-        <b>Total Load</b> = {P:,.2f} kN <br>
-        <b>Moment</b> = {M:,.2f} kN·m <br><br>
-        <b>Max Load</b> = {np.max(Qi):,.2f} kN <br>
-        <b>Min Load</b> = {np.min(Qi):,.2f} kN
+        <div class="result">
+        <b>Original Centroid</b><br>
+        x̄ = {x_bar:.2f} m <br>
+        ȳ = {y_bar:.2f} m <br><br>
+
+        <b>New Centroid (after load)</b><br>
+        x = {x_new:.2f} m <br>
+        y = {y_new:.2f} m
         </div>
         """, unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # Table
+        # -------------------------
+        # Load Table
+        # -------------------------
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📋 Load per Pile")
 
-        table = "<table><tr><th>Pile</th><th>Load (kN)</th></tr>"
-        for i, q in enumerate(Qi):
-            table += f"<tr><td>{i+1}</td><td>{q:,.2f}</td></tr>"
-        table += "</table>"
+        for i in range(len(Qi)):
+            st.write(f"Pile {i+1} → {Qi[i]:,.2f} kN")
 
-        st.markdown(table, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
+        # -------------------------
         # Check
+        # -------------------------
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.subheader("⚠️ Design Check")
+        st.subheader("⚠️ Check")
 
         if np.min(Qi) < 0:
-            st.error("❌ มีแรงดึง (Pile Uplift)")
+            st.error("❌ มีแรงดึง (Uplift)")
         else:
-            st.success("✅ ทุกต้นรับแรงอัด")
+            st.success("✅ ปลอดภัย")
 
         st.markdown('</div>', unsafe_allow_html=True)
