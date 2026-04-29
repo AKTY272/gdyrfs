@@ -4,18 +4,41 @@ import numpy as np
 # -------------------------
 # Page Config
 # -------------------------
-st.set_page_config(page_title="Shallow Foundation Calculator",
-                   page_icon="🏗️",
-                   layout="centered")
+st.set_page_config(
+    page_title="Shallow Foundation Calculator",
+    page_icon="🏗️",
+    layout="centered"
+)
 
 # -------------------------
-# Custom CSS (UI สวย)
+# Custom CSS (UI + สีตัวหนังสือ)
 # -------------------------
 st.markdown("""
 <style>
+
+/* พื้นหลัง */
 .main {
     background-color: #f5f7fa;
 }
+
+/* สีตัวหนังสือทั้งระบบ */
+html, body, [class*="css"]  {
+    color: #1a1a1a;
+    font-weight: 500;
+}
+
+/* หัวข้อ */
+h1, h2, h3 {
+    color: #0d47a1;
+}
+
+/* label input */
+label {
+    color: #0d47a1 !important;
+    font-weight: 600;
+}
+
+/* ปุ่ม */
 .stButton>button {
     background-color: #1f77b4;
     color: white;
@@ -23,12 +46,16 @@ st.markdown("""
     height: 3em;
     width: 100%;
 }
+
+/* กล่องผลลัพธ์ */
 .result-box {
     background-color: #e8f0fe;
     padding: 15px;
     border-radius: 10px;
     font-size: 18px;
+    color: #0d47a1;
 }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -84,7 +111,7 @@ if calculate:
         Nq = np.exp(np.pi * np.tan(phi_rad)) * (np.tan(np.radians(45) + phi_rad/2))**2
         
         if phi == 0:
-            Nc = 5.7   # special case
+            Nc = 5.7
         else:
             Nc = (Nq - 1) / np.tan(phi_rad)
 
