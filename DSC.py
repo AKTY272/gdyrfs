@@ -11,57 +11,69 @@ st.set_page_config(
 )
 
 # -------------------------
-# CSS (สวย + ตัวหนังสือดำทั้งหมด)
+# CSS (แก้ readability เต็มระบบ)
 # -------------------------
 st.markdown("""
 <style>
 
 /* พื้นหลัง */
 [data-testid="stAppViewContainer"] {
-    background: linear-gradient(135deg, #eef3f8, #ffffff);
+    background: #eef3f8;
 }
 
-/* ตัวหนังสือทั้งหมด */
-[data-testid="stAppViewContainer"],
+/* ฟอนต์ + สี */
 [data-testid="stAppViewContainer"] * {
-    color: #000000 !important;
+    color: #1a1a1a !important;
     font-family: 'Segoe UI', sans-serif;
 }
 
-/* หัวข้อ */
-h1 {
-    font-weight: 800;
+/* การ์ด */
+.card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    margin-bottom: 20px;
 }
 
-/* Card */
-.card {
-    background: white;
-    padding: 25px;
-    border-radius: 18px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-    margin-bottom: 20px;
+/* INPUT (จุดสำคัญ) */
+input {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border: 1px solid #ccc !important;
+    border-radius: 8px;
+}
+
+/* dropdown */
+div[data-baseweb="select"] > div {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+/* label */
+label {
+    font-weight: 600 !important;
 }
 
 /* ปุ่ม */
 .stButton>button {
-    background: linear-gradient(90deg, #1565c0, #42a5f5);
+    background: #1565c0;
     color: white !important;
-    border-radius: 12px;
+    border-radius: 10px;
     height: 3em;
     width: 100%;
     font-weight: 600;
 }
 
-/* Result box */
+/* result box */
 .result-box {
     background: #f1f6ff;
     padding: 20px;
     border-radius: 12px;
     border-left: 6px solid #1565c0;
-    font-size: 18px;
 }
 
-/* Table */
+/* table */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -69,9 +81,8 @@ table {
 th {
     background: #1565c0;
     color: white;
-    padding: 10px;
 }
-td {
+td, th {
     padding: 10px;
     text-align: center;
 }
@@ -83,7 +94,7 @@ td {
 # Title
 # -------------------------
 st.title("🏗️ Pile Foundation Designer")
-st.caption("Eccentric Load Distribution (Pile Group)")
+st.caption("Eccentric Load Distribution")
 
 # -------------------------
 # Layout
@@ -99,7 +110,6 @@ with col1:
 
     P = st.number_input("Axial Load P (kN)", value=1000.0)
     e = st.number_input("Eccentricity e (m)", value=0.5)
-
     n = st.selectbox("Number of Piles", [2, 4, 6])
     spacing = st.number_input("Pile spacing (m)", value=2.0)
 
@@ -116,23 +126,17 @@ with col2:
 
         M = P * e
 
-        # pile position (1D simplification)
         if n == 2:
             x = np.array([-spacing/2, spacing/2])
-
         elif n == 4:
             x = np.array([-spacing/2, spacing/2, -spacing/2, spacing/2])
-
         else:
             x = np.array([-spacing, 0, spacing, -spacing, 0, spacing])
 
         sum_x2 = np.sum(x**2)
-
         Qi = (P / n) + (M * x / sum_x2)
 
-        # -------------------------
         # Summary
-        # -------------------------
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📊 Summary")
 
@@ -147,9 +151,7 @@ with col2:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # -------------------------
         # Table
-        # -------------------------
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("📋 Load per Pile")
 
@@ -161,9 +163,7 @@ with col2:
         st.markdown(table, unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
-        # -------------------------
         # Check
-        # -------------------------
         st.markdown('<div class="card">', unsafe_allow_html=True)
         st.subheader("⚠️ Design Check")
 
