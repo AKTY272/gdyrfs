@@ -1,6 +1,5 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
 
 # -------------------------
 # Page Config
@@ -12,13 +11,10 @@ st.set_page_config(
 )
 
 # -------------------------
-# Custom CSS
+# UI Style
 # -------------------------
 st.markdown("""
 <style>
-body {
-    background-color: #f0f2f6;
-}
 .block-container {
     padding-top: 2rem;
 }
@@ -39,7 +35,7 @@ st.title("🏗️ Shallow Foundation Calculator")
 st.caption("Terzaghi Bearing Capacity Method")
 
 # -------------------------
-# Input Card
+# Input
 # -------------------------
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.subheader("📥 Input Parameters")
@@ -80,7 +76,7 @@ if calculate:
     qall = qult / FS
 
     # -------------------------
-    # Result Card
+    # Results
     # -------------------------
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("📊 Results")
@@ -93,7 +89,7 @@ if calculate:
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -------------------------
-    # Graph Section
+    # Graph (no matplotlib)
     # -------------------------
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("📈 Sensitivity Analysis")
@@ -115,12 +111,7 @@ if calculate:
             qult_temp = c * Nc + gamma * D * Nq + 0.5 * gamma * b * Ngamma
             q_vals.append(qult_temp / FS)
 
-        fig, ax = plt.subplots()
-        ax.plot(B_range, q_vals)
-        ax.set_xlabel("Width B (m)")
-        ax.set_ylabel("q_allowable (kPa)")
-        ax.set_title("q vs B")
-        st.pyplot(fig)
+        st.line_chart(q_vals)
 
     else:
         phi_range = np.linspace(0, 45, 50)
@@ -136,44 +127,28 @@ if calculate:
             qult_temp = c * Nc + gamma * D * Nq + 0.5 * gamma * B * Ngamma
             q_vals.append(qult_temp / FS)
 
-        fig, ax = plt.subplots()
-        ax.plot(phi_range, q_vals)
-        ax.set_xlabel("Friction angle φ (deg)")
-        ax.set_ylabel("q_allowable (kPa)")
-        ax.set_title("q vs φ")
-        st.pyplot(fig)
+        st.line_chart(q_vals)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
     # -------------------------
-    # Diagram Section
+    # Simple Diagram (no matplotlib)
     # -------------------------
     st.markdown('<div class="card">', unsafe_allow_html=True)
     st.subheader("🏗️ Footing Diagram")
 
-    fig2, ax2 = plt.subplots()
-
-    # footing
-    ax2.add_patch(plt.Rectangle((0, 0), B, 0.5, fill=False))
-
-    # ground line
-    ax2.hlines(0.5, -1, B+1)
-
-    # depth arrow
-    ax2.annotate("", xy=(-0.5, 0.5), xytext=(-0.5, 0),
-                 arrowprops=dict(arrowstyle="<->"))
-    ax2.text(-0.7, 0.25, f"D = {D} m")
-
-    # width arrow
-    ax2.annotate("", xy=(0, -0.2), xytext=(B, -0.2),
-                 arrowprops=dict(arrowstyle="<->"))
-    ax2.text(B/2, -0.4, f"B = {B} m", ha='center')
-
-    ax2.set_xlim(-1, B+1)
-    ax2.set_ylim(-1, 2)
-    ax2.set_title("Shallow Foundation")
-    ax2.axis('off')
-
-    st.pyplot(fig2)
+    st.markdown(f"""
+    ```
+        Ground Level
+    -----------------------
+            |<-- B = {B} m -->|
+            ┌───────────────┐
+            │   FOOTING     │
+            └───────────────┘
+                ↑
+                │  D = {D} m
+                ↓
+    ```
+    """)
 
     st.markdown('</div>', unsafe_allow_html=True)
